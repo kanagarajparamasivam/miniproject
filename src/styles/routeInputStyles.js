@@ -17,9 +17,10 @@ export const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
   },
   backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+  historyButton: {
     padding: 8,
     zIndex: 10,
   },

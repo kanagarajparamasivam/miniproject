@@ -1,0 +1,57 @@
+﻿
+> bus-taxi-booking@1.0.0 web
+> expo start --web
+
+Starting project at C:\Users\acer\Downloads\mini project\mini project
+Starting Metro Bundler
+node.exe : The following packages 
+should be updated for best 
+compatibility with the installed 
+expo version:
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSp 
+   ecified: (The following p...d e  
+  xpo version::String) [], Remote   
+ Exception
+    + FullyQualifiedErrorId : Nativ 
+   eCommandError
+ 
+  @expo/vector-icons@13.0.0 - 
+expected version: ^15.0.3
+  @types/react@18.2.79 - expected 
+version: ~19.1.10
+  expo@54.0.30 - expected version: 
+~54.0.32
+  expo-linear-gradient@12.3.0 - 
+expected version: ~15.0.8
+  expo-status-bar@1.6.0 - expected 
+version: ~3.0.9
+  react@18.2.0 - expected version: 
+19.1.0
+  react-dom@18.2.0 - expected 
+version: 19.1.0
+  react-native@0.72.17 - expected 
+version: 0.81.5
+  react-native-safe-area-context@4.6
+.3 - expected version: ~5.6.0
+  react-native-screens@3.22.1 - 
+expected version: ~4.16.0
+  react-native-web@0.19.9 - 
+expected version: ^0.21.0
+Your project may not work correctly 
+until you install the expected 
+versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web Bundled 611ms node_modules\expo\AppEntry.js (494 modules)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo\AppEntry.js ΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæΓûæ  0.0% (0/1)
+Web Bundled 76ms node_modules\expo\AppEntry.js (1 module)
+Web Bundled 57ms node_modules\expo\AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+ LOG  [web] Logs will appear in the browser console

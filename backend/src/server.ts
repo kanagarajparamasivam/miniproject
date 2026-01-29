@@ -1,11 +1,13 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { connectDatabase } from './config/database';
 import { authRoutes } from './routes/authRoutes';
 import { routeRoutes } from './routes/routeRoutes';
 import { busRoutes } from './routes/busRoutes';
 import { taxiRoutes } from './routes/taxiRoutes';
 import { hybridRoutes } from './routes/hybridRoutes';
+import { bookingRoutes } from './routes/bookingRoutes';
 
 dotenv.config();
 
@@ -16,6 +18,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Connect to MongoDB
+connectDatabase().catch(console.error);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -28,6 +33,7 @@ app.use('/api', routeRoutes);
 app.use('/api', busRoutes);
 app.use('/api', taxiRoutes);
 app.use('/api', hybridRoutes);
+app.use('/api', bookingRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: Function) => {

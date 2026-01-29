@@ -1,17 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/resultsStyles';
+import { hybridAPI } from '../services/api';
 
 export default function ResultsScreen({ route, navigation }) {
-  const { recommendation, source, destination } = route.params;
+  const { source, destination } = route.params;
+  const [loading, setLoading] = useState(true);
+  const [recommendation, setRecommendation] = useState(null);
+  const [error, setError] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    fetchRoutes();
+  }, []);
+
+  const fetchRoutes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setIsOffline(false);
+      const response = await hybridAPI.getHybridRecommendation(source, destination);
+
+      if (response.success) {
+        setRecommendation(response.data);
+        if (response.message && response.message.includes('Offline')) {
+          setIsOffline(true);
+        }
+      } else {
+        // Even if success is false, check if we have data (fallback)
+        if (response.data) {
+          setRecommendation(response.data);
+          setIsOffline(true);
+        } else {
+          setError(response.message || 'Failed to fetch routes');
+          Alert.alert('Error', response.message || 'Failed to fetch routes');
+        }
+      }
+    } catch (err) {
+      // Should be caught by api.js fallback, but just in case
+      console.log('Error in ResultsScreen:', err);
+      setError('Connection to server failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatTime = (minutes) => {
     if (minutes < 60) return `${minutes} min`;
@@ -24,7 +65,42 @@ export default function ResultsScreen({ route, navigation }) {
     return `₹${amount}`;
   };
 
-  const OptionCard = ({ title, fare, eta, available, isRecommended, breakdown }) => (
+  const handleBook = async (optionType, breakdown) => {
+    if (optionType === 'Bus') {
+      // Navigate to bus seat selection
+      navigation.navigate('BusSeatSelection', {
+        busId: breakdown?.bus?.busId,
+        routeNo: breakdown?.bus?.routeNo,
+        source,
+        destination,
+        fare: recommendation.allOptions.busOnly.fare,
+        departureTime: breakdown?.bus?.departureTime,
+        arrivalTime: breakdown?.bus?.arrivalTime,
+      });
+    } else if (optionType === 'Taxi') {
+      // Navigate to taxi booking - for now just show alert as taxi-only booking screen not created
+      Alert.alert(
+        'Taxi Booking',
+        'Direct taxi booking feature coming soon. Please use Bus or Hybrid option.',
+        [{ text: 'OK' }]
+      );
+    } else if (optionType === 'Hybrid') {
+      // Navigate to bus seat selection first, then taxi
+      navigation.navigate('BusSeatSelection', {
+        busId: breakdown?.hybrid?.busId,
+        routeNo: breakdown?.hybrid?.routeNo,
+        source,
+        destination,
+        fare: breakdown?.hybrid?.busFare,
+        departureTime: breakdown?.hybrid?.departureTime,
+        arrivalTime: breakdown?.hybrid?.arrivalTime,
+        isHybrid: true,
+        taxiFare: breakdown?.hybrid?.taxiFare,
+      });
+    }
+  };
+
+  const OptionCard = ({ title, fare, eta, available, isRecommended, breakdown, optionType }) => (
     <View style={[styles.optionCard, isRecommended && styles.recommendedCard]}>
       {isRecommended && (
         <View style={styles.recommendedBadge}>
@@ -32,7 +108,7 @@ export default function ResultsScreen({ route, navigation }) {
           <Text style={styles.recommendedText}>RECOMMENDED</Text>
         </View>
       )}
-      
+
       <View style={styles.optionHeader}>
         <Text style={styles.optionTitle}>{title}</Text>
         {!available && (
@@ -81,6 +157,14 @@ export default function ResultsScreen({ route, navigation }) {
               )}
             </View>
           )}
+
+          <TouchableOpacity
+            style={styles.bookOptionButton}
+            onPress={() => handleBook(optionType, breakdown)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.bookOptionButtonText}>Book {optionType}</Text>
+          </TouchableOpacity>
         </>
       ) : (
         <Text style={styles.unavailableMessage}>This option is not available for this route</Text>
@@ -115,79 +199,95 @@ export default function ResultsScreen({ route, navigation }) {
         </View>
       </LinearGradient>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Recommended Option Highlight */}
-        <View style={styles.recommendationBanner}>
-          <Ionicons name="bulb" size={24} color="#FFD700" />
-          <View style={styles.recommendationTextContainer}>
-            <Text style={styles.recommendationTitle}>
-              Best Option: {recommendation.recommendedOption}
-            </Text>
-            <Text style={styles.recommendationSubtitle}>
-              {formatCurrency(recommendation.totalFare)} • {formatTime(recommendation.totalETA)}
-            </Text>
+      {/* Offline Banner */}
+      {isOffline && (
+        <View style={{ backgroundColor: '#FF9800', padding: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="cloud-offline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+          <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Using offline route data</Text>
+        </View>
+      )}
+
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text style={{ marginTop: 15, color: '#666' }}>Finding best routes...</Text>
+        </View>
+      ) : error ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Ionicons name="alert-circle-outline" size={48} color="#E74C3C" />
+          <Text style={{ marginTop: 10, fontSize: 16, color: '#333', textAlign: 'center' }}>{error}</Text>
+          <TouchableOpacity
+            style={[styles.bookOptionButton, { marginTop: 20, width: 150 }]}
+            onPress={fetchRoutes}
+          >
+            <Text style={styles.bookOptionButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      ) : recommendation ? (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Recommended Option Highlight */}
+          <View style={styles.recommendationBanner}>
+            <Ionicons name="bulb" size={24} color="#FFD700" />
+            <View style={styles.recommendationTextContainer}>
+              <Text style={styles.recommendationTitle}>
+                Best Option: {recommendation.recommendedOption}
+              </Text>
+              <Text style={styles.recommendationSubtitle}>
+                {formatCurrency(recommendation.totalFare)} • {formatTime(recommendation.totalETA)}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        {/* All Options */}
-        <View style={styles.optionsContainer}>
-          <OptionCard
-            title="Bus Only"
-            fare={recommendation.allOptions.busOnly.fare}
-            eta={recommendation.allOptions.busOnly.eta}
-            available={recommendation.allOptions.busOnly.available}
-            isRecommended={recommendation.recommendedOption === 'Bus'}
-            breakdown={recommendation.breakdown?.bus ? { bus: recommendation.breakdown.bus } : null}
-          />
+          {/* All Options */}
+          <View style={styles.optionsContainer}>
+            <OptionCard
+              title="Bus Only"
+              fare={recommendation.allOptions.busOnly.fare}
+              eta={recommendation.allOptions.busOnly.eta}
+              available={recommendation.allOptions.busOnly.available}
+              isRecommended={recommendation.recommendedOption === 'Bus'}
+              breakdown={recommendation.breakdown?.bus ? { bus: recommendation.breakdown.bus } : null}
+              optionType="Bus"
+            />
 
-          <OptionCard
-            title="Taxi Only"
-            fare={recommendation.allOptions.taxiOnly.fare}
-            eta={recommendation.allOptions.taxiOnly.eta}
-            available={recommendation.allOptions.taxiOnly.available}
-            isRecommended={recommendation.recommendedOption === 'Taxi'}
-            breakdown={recommendation.breakdown?.taxi ? { taxi: recommendation.breakdown.taxi } : null}
-          />
+            <OptionCard
+              title="Taxi Only"
+              fare={recommendation.allOptions.taxiOnly.fare}
+              eta={recommendation.allOptions.taxiOnly.eta}
+              available={recommendation.allOptions.taxiOnly.available}
+              isRecommended={recommendation.recommendedOption === 'Taxi'}
+              breakdown={recommendation.breakdown?.taxi ? { taxi: recommendation.breakdown.taxi } : null}
+              optionType="Taxi"
+            />
 
-          <OptionCard
-            title="Hybrid (Bus + Taxi)"
-            fare={recommendation.allOptions.hybrid.fare}
-            eta={recommendation.allOptions.hybrid.eta}
-            available={recommendation.allOptions.hybrid.available}
-            isRecommended={recommendation.recommendedOption === 'Hybrid'}
-            breakdown={recommendation.breakdown?.hybrid ? { hybrid: recommendation.breakdown.hybrid } : null}
-          />
-        </View>
+            <OptionCard
+              title="Hybrid (Bus + Taxi)"
+              fare={recommendation.allOptions.hybrid.fare}
+              eta={recommendation.allOptions.hybrid.eta}
+              available={recommendation.allOptions.hybrid.available}
+              isRecommended={recommendation.recommendedOption === 'Hybrid'}
+              breakdown={recommendation.breakdown?.hybrid ? { hybrid: recommendation.breakdown.hybrid } : null}
+              optionType="Hybrid"
+            />
+          </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.bookButton}
-            onPress={() => {
-              Alert.alert(
-                'Booking',
-                `Booking ${recommendation.recommendedOption} option for ${formatCurrency(recommendation.totalFare)}`
-              );
-            }}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-            <Text style={styles.bookButtonText}>Book Now</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.backButtonSecondary}
-            onPress={() => navigation.navigate('RouteInput')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backButtonText}>Search Again</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          {/* Back Button */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.backButtonSecondary}
+              onPress={() => navigation.navigate('RouteInput')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.backButtonText}>Search Again</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      ) : null}
     </View>
   );
 }
+
 

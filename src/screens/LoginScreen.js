@@ -56,10 +56,7 @@ export default function LoginScreen({ navigation }) {
           Alert.alert('Login Failed', response.message || 'Invalid credentials');
         }
       } catch (error) {
-        Alert.alert(
-          'Connection Error',
-          'Unable to connect to server. Please make sure the backend is running on http://localhost:3000'
-        );
+        Alert.alert('Login Error', error?.message || 'Login failed. Please try again.');
         console.error('Login error:', error);
       } finally {
         setLoading(false);
@@ -67,9 +64,20 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleUseDemoAccount = () => {
+    setEmail('demo@example.com');
+    setPassword('demo123');
+    setErrors({});
+  };
+
   const handleForgotPassword = () => {
     console.log('Forgot password pressed');
     // Navigate to forgot password screen
+  };
+
+  const handleSkipLogin = () => {
+    // Demo-only: allow user to bypass login and see the rest of the flow
+    navigation.replace('RouteInput');
   };
 
   const handleSignUp = () => {
@@ -215,6 +223,15 @@ export default function LoginScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
+          {/* Skip Login (Demo) */}
+          <TouchableOpacity
+            style={[styles.loginTextButton, { marginTop: 12 }]}
+            onPress={handleSkipLogin}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.loginTextButtonText}>Skip Login (Demo)</Text>
+          </TouchableOpacity>
+
           {/* Demo Accounts Section */}
           <View style={styles.demoSection}>
             <View style={styles.divider}>
@@ -233,6 +250,14 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.demoValue}>demo123</Text>
               </View>
             </View>
+
+            <TouchableOpacity
+              style={[styles.signInButton, { marginTop: 12 }]}
+              onPress={handleUseDemoAccount}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.signInButtonText}>Use Demo Account</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

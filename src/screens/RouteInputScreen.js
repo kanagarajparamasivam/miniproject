@@ -23,60 +23,39 @@ export default function RouteInputScreen({ navigation }) {
 
   const validateInputs = () => {
     const newErrors = {};
-    
+
     if (!source.trim()) {
       newErrors.source = 'Source location is required';
     }
-    
+
     if (!destination.trim()) {
       newErrors.destination = 'Destination location is required';
     }
-    
+
     if (source.trim().toLowerCase() === destination.trim().toLowerCase()) {
       newErrors.destination = 'Source and destination must be different';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!validateInputs()) {
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await hybridAPI.getHybridRecommendation(
-        source.trim(),
-        destination.trim()
-      );
-
-      if (response.success) {
-        navigation.navigate('Results', {
-          recommendation: response.data,
-          source: source.trim(),
-          destination: destination.trim(),
-        });
-      } else {
-        Alert.alert('Error', response.message || 'Failed to get recommendations');
-      }
-    } catch (error) {
-      Alert.alert(
-        'Connection Error',
-        'Unable to connect to server. Please make sure the backend is running on http://localhost:3000'
-      );
-      console.error('Search error:', error);
-    } finally {
-      setLoading(false);
-    }
+    navigation.navigate('Results', {
+      source: source.trim(),
+      destination: destination.trim(),
+    });
   };
 
   const quickLocations = [
-    { name: 'Downtown', icon: 'business' },
-    { name: 'Airport', icon: 'airplane' },
-    { name: 'City Center', icon: 'location' },
-    { name: 'Mall', icon: 'storefront' },
+    { name: 'Chennai', icon: 'location' },
+    { name: 'Coimbatore', icon: 'business' },
+    { name: 'Madurai', icon: 'star' },
+    { name: 'Salem', icon: 'location' },
   ];
 
   const handleQuickSelect = (location, type) => {
@@ -103,16 +82,28 @@ export default function RouteInputScreen({ navigation }) {
           colors={['#4A90E2', '#FFFFFF']}
           style={styles.headerGradient}
         >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#1E3A5F" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Plan Your Trip</Text>
-          <Text style={styles.headerSubtitle}>
-            Enter your source and destination
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#1E3A5F" />
+            </TouchableOpacity>
+
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={styles.headerTitle}>Plan Your Trip</Text>
+              <Text style={styles.headerSubtitle}>
+                Enter your source and destination
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.historyButton}
+              onPress={() => navigation.navigate('MyBookings')}
+            >
+              <Ionicons name="receipt-outline" size={24} color="#1E3A5F" />
+            </TouchableOpacity>
+          </View>
         </LinearGradient>
 
         {/* Input Section */}
@@ -214,9 +205,18 @@ export default function RouteInputScreen({ navigation }) {
               </>
             )}
           </TouchableOpacity>
+
+          {/* Standalone Taxi Entry Point */}
+          <TouchableOpacity
+            style={[styles.searchButton, { backgroundColor: '#2ECC71', marginTop: 15 }]}
+            onPress={() => navigation.navigate('StandaloneTaxi')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="car" size={20} color="#FFFFFF" style={styles.searchIcon} />
+            <Text style={styles.searchButtonText}>Book Local Taxi</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingView >
   );
 }
-

@@ -1,0 +1,8 @@
+{
+    "userId": "demo@example.com",
+    "busId": "659d40b0e52b2a1234567890",
+    "selectedSeats": [
+        "10"
+    ],
+    "bookingDate": "2024-01-01T10:00:00.000Z"
+}

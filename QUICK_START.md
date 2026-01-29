@@ -3,7 +3,6 @@
 Fast setup for testing the application quickly.
 
 ## Prerequisites Check
-
 ```bash
 node --version    # Should show v14 or higher
 npm --version     # Should show version number
@@ -13,9 +12,12 @@ If not installed: Download Node.js from https://nodejs.org/
 
 ---
 
-## Step-by-Step (Copy-Paste Commands)
+## Step-by-Step Instructions
 
-### 1. Install Backend (Terminal 1)
+### 1. Start External Database (Optional but Recommended)
+Ensure MongoDB is installed and running. If not, the app will use some mock data but database features won't persist.
+y
+### 2. Install & Start Backend (Terminal 1)
 
 ```bash
 cd backend
@@ -23,77 +25,54 @@ npm install
 npm run dev
 ```
 
+**Setup Data (First Time Only):**
+Open a new terminal in `backend` and run:
+```bash
+npx ts-node src/scripts/seedDatabase.ts
+```
+*(This loads the "Chennai" -> "Coimbatore" bus routes into the database)*
+
 **Wait for:** `🚀 Server running on http://localhost:3000`
 
-**Keep this terminal open!**
+### 3. Install & Start Frontend (Terminal 2)
 
----
-
-### 2. Install Frontend (Terminal 2 - NEW WINDOW)
+Open a **new** terminal window at the project root:
 
 ```bash
 cd "C:\Users\ASUS\OneDrive\Desktop\haran\mini project"
 npm install
-npm start
+npm run web
 ```
-
-**Then press:** `w` (for web browser)
-
----
-
-### 3. Test Login
-
-- Email: `demo@example.com`
-- Password: `demo123`
-- Click "Sign In"
+*(Use `npm start` if you want to run on a mobile device with Expo Go)*
 
 ---
 
-### 4. Test Route Search
+## 4. Test the App
 
-- Source: `Dontownw`
-- Destination: `Airport`
-- Click "Find Best Route"
+### Login
+- **Email:** `demo@example.com`
+- **Password:** `demo123`
 
----
+### Search Route (Important: Use Valid Cities)
+- **Source:** `Chennai`
+- **Destination:** `Coimbatore`
+*(Or try: Madurai -> Tiruchirappalli)*
 
-### 5. View Results
+- Click **"Find Best Route"**
 
-- See all three options (Bus, Taxi, Hybrid)
-- Recommended option is highlighted
+### View Results
+- You should see Bus, Taxi, and Hybrid options.
+- The Bus option will show the data from the database.
 
 ---
 
 ## ✅ Success Checklist
 
-- [ ] Backend shows "Server running" message
-- [ ] Frontend shows QR code and options
-- [ ] Browser opens with login screen
-- [ ] Can login with demo credentials
-- [ ] Can search for routes
-- [ ] Results screen shows recommendations
-
----
-
-## ❌ Common Issues
-
-**Backend won't start:**
-- Check if port 3000 is free
-- Run: `npm install` again in backend folder
-
-**Frontend won't start:**
-- Make sure you're in project root (not backend folder)
-- Run: `npm install` again
-
-**Can't connect to backend:**
-- Verify backend is running (check Terminal 1)
-- Open `http://localhost:3000/health` in browser
-- Should see JSON response
-
-**Mobile device can't connect:**
-- Update `src/services/api.js` with your computer's IP
-- Find IP: Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux)
-- Replace `localhost` with your IP address
+- [ ] Backend terminal shows "MongoDB connected successfully"
+- [ ] Frontend terminal shows "Web is waiting on http://localhost:19006"
+- [ ] Browser opens login page
+- [ ] Login works
+- [ ] searching "Chennai" to "Coimbatore" shows valid bus results
 
 ---
 

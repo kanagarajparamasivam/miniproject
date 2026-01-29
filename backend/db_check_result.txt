@@ -1,0 +1,90 @@
+Checking Bus collection...
+Total buses: 23 
+Sample routes found in DB:
+- Chennai to Coimbatore 
+- Chennai to Madurai 
+- Chennai to Tiruchirappalli 
+- Chennai to Salem 
+- Chennai to Vellore 
+- Chennai to Pondicherry 
+- Coimbatore to Salem 
+- Coimbatore to Madurai 
+- Coimbatore to Ooty 
+- Coimbatore to Tirunelveli 
+- Coimbatore to Erode 
+- Madurai to Tirunelveli 
+- Madurai to Rameswaram 
+- Madurai to Kanyakumari 
+- Madurai to Tiruchirappalli 
+- Tiruchirappalli to Thanjavur 
+- Tiruchirappalli to Pudukkottai 
+- Salem to Erode 
+- Salem to Hosur 
+- Salem to Vellore 
+- Vellore to Kanchipuram 
+- Thanjavur to Nagapattinam 
+- Tirunelveli to Kanyakumari 
+
+
+API RESPONSE:
+{
+  "success": true,
+  "data": {
+    "recommendedOption": "Bus",
+    "totalFare": 450,
+    "totalETA": 180,
+    "breakdown": {
+      "bus": {
+        "routeNo": "TN001",
+        "fare": 450,
+        "eta": 180,
+        "coveragePercent": 100,
+        "departureTime": "17:30",
+        "arrivalTime": "14:45",
+        "busId": "695bf69f6bf2bf0c22131b12"
+      },
+      "taxi": {
+        "fare": 7425,
+        "eta": 990,
+        "distance": 495
+      },
+      "hybrid": {
+        "busFare": 450,
+        "busETA": 180,
+        "taxiFare": 0,
+        "taxiETA": 0,
+        "totalFare": 450,
+        "totalETA": 180,
+        "busId": "695bf69f6bf2bf0c22131b12",
+        "routeNo": "TN001",
+        "departureTime": "17:30",
+        "arrivalTime": "14:45"
+      }
+    },
+    "allOptions": {
+      "busOnly": {
+        "fare": 450,
+        "eta": 180,
+        "available": true
+      },
+      "taxiOnly": {
+        "fare": 7425,
+        "eta": 990,
+        "available": true
+      },
+      "hybrid": {
+        "fare": 450,
+        "eta": 180,
+        "available": true
+      }
+    },
+    "taxiRouteData": {
+      "source": "Chennai",
+      "destination": "Coimbatore",
+      "distance": 495,
+      "estimatedTime": 180
+    }
+  },
+  "source": "Chennai",
+  "destination": "Coimbatore"
+}

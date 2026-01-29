@@ -16,10 +16,14 @@ export interface HybridRecommendation {
       fare: number;
       eta: number;
       coveragePercent: number;
+      departureTime?: string;
+      arrivalTime?: string;
+      busId?: string;
     };
     taxi?: {
       fare: number;
       eta: number;
+      distance?: number;
     };
     hybrid?: {
       busFare: number;
@@ -28,6 +32,10 @@ export interface HybridRecommendation {
       taxiETA: number;
       totalFare: number;
       totalETA: number;
+      busId?: string;
+      routeNo?: string;
+      departureTime?: string;
+      arrivalTime?: string;
     };
   };
   allOptions: {
