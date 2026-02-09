@@ -14,11 +14,21 @@ export interface IBooking extends Document {
     arrivalTime: string;
     bookingDate: Date;
   };
+  passengerDetails?: {
+    name: string;
+    age: number;
+    gender: string;
+    seatNumber: string;
+    idProof?: string;
+    email?: string;
+    mobile?: string;
+  }[];
   pickupTaxi?: {
     source: string;
     destination: string;
     fare: number;
     distance: number;
+    taxiType: string;
     scheduledTime: Date;
     estimatedPickupTime: Date;
   };
@@ -27,6 +37,7 @@ export interface IBooking extends Document {
     destination: string;
     fare: number;
     distance: number;
+    taxiType: string;
     scheduledTime: Date;
     estimatedPickupTime: Date;
   };
@@ -34,7 +45,7 @@ export interface IBooking extends Document {
   paymentStatus: 'pending' | 'completed' | 'failed';
   paymentMethod?: 'upi' | 'card' | 'netbanking' | 'wallet';
   paymentId?: string;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'confirmed' | 'cancelled' | 'completed' | 'SEAT_HELD' | 'PASSENGER_CONFIRMED' | 'HYBRID_COMPLETE';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,11 +76,21 @@ const BookingSchema: Schema = new Schema(
       arrivalTime: String,
       bookingDate: Date,
     },
+    passengerDetails: [{
+      name: String,
+      age: Number,
+      gender: String,
+      seatNumber: String,
+      idProof: String,
+      email: String,
+      mobile: String,
+    }],
     pickupTaxi: {
       source: String,
       destination: String,
       fare: Number,
       distance: Number,
+      taxiType: String,
       scheduledTime: Date, // Based on bus departure time (minus travel time)
       estimatedPickupTime: Date,
     },
@@ -78,6 +99,7 @@ const BookingSchema: Schema = new Schema(
       destination: String,
       fare: Number,
       distance: Number,
+      taxiType: String,
       scheduledTime: Date, // Based on bus arrival time
       estimatedPickupTime: Date,
     },
@@ -97,7 +119,7 @@ const BookingSchema: Schema = new Schema(
     paymentId: String,
     status: {
       type: String,
-      enum: ['confirmed', 'cancelled', 'completed'],
+      enum: ['confirmed', 'cancelled', 'completed', 'SEAT_HELD', 'PASSENGER_CONFIRMED', 'HYBRID_COMPLETE'],
       default: 'confirmed',
     },
   },

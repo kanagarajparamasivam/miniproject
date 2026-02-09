@@ -23,8 +23,16 @@ export default function TaxiBookingAfterBusScreen({ route, navigation }) {
   const [pickupSource, setPickupSource] = useState(''); // User's location
   const [pickupDistance, setPickupDistance] = useState('');
 
+  // Taxi Type State
+  const [selectedTaxiType, setSelectedTaxiType] = useState('Mini');
+  const taxiRates = {
+    Mini: { base: 50, perKm: 15 },
+    Sedan: { base: 70, perKm: 20 },
+    SUV: { base: 100, perKm: 30 }
+  };
+
   // Drop State
-  const [addDrop, setAddDrop] = useState(false);
+  const [addDrop, setAddDrop] = useState(true); // Default to true as per "Show Pickup Location" requirement
   const [dropDestination, setDropDestination] = useState(''); // User's final destination
   const [dropDistance, setDropDistance] = useState('');
 
@@ -32,8 +40,11 @@ export default function TaxiBookingAfterBusScreen({ route, navigation }) {
 
   const calculateTotalFare = () => {
     let taxiTotal = 0;
-    if (addPickup && pickupDistance) taxiTotal += 50 + (parseFloat(pickupDistance) * 15);
-    if (addDrop && dropDistance) taxiTotal += 50 + (parseFloat(dropDistance) * 15);
+    const rate = taxiRates[selectedTaxiType];
+
+    if (addPickup && pickupDistance) taxiTotal += rate.base + (parseFloat(pickupDistance) * rate.perKm);
+    if (addDrop && dropDistance) taxiTotal += rate.base + (parseFloat(dropDistance) * rate.perKm);
+
     return busFare + taxiTotal;
   };
 
@@ -56,55 +67,55 @@ export default function TaxiBookingAfterBusScreen({ route, navigation }) {
     let totalTaxiFare = 0;
 
     try {
-      // 1. Process Pickup Taxi if selected
+      // Aggregate payload for single API call
+      const payload = {
+        bookingId: currentBookingId,
+        taxiType: selectedTaxiType, // Send selected type
+        distance: 0 // Will be calc from pickup/drop
+      };
+
+      let totalDistance = 0;
+
       if (addPickup) {
         if (!pickupSource.trim() || !pickupDistance) {
           Alert.alert('Error', 'Please fill all Pickup details');
           setLoading(false);
           return;
         }
-
-        const response = await hybridAPI.bookTaxi({
-          bookingId: currentBookingId,
-          pickup: {
-            source: pickupSource, // User Loc
-            destination: busSource, // Bus Source
-            distance: parseFloat(pickupDistance)
-          },
-          taxiType: 'pickup'
-        });
-
-        if (!response.success) {
-          throw new Error(response.message || 'Failed to add Pickup Taxi');
-        }
-        currentBookingId = response.data._id || response.bookingId;
-        // Update fare tracking
-        currentTotalFare = response.data.totalFare || response.data.booking.totalFare; // Adapt based on backend response structure
+        payload.pickup = {
+          source: pickupSource,
+          destination: busSource,
+          distance: parseFloat(pickupDistance)
+        };
+        totalDistance += parseFloat(pickupDistance);
       }
 
-      // 2. Process Drop Taxi if selected
       if (addDrop) {
         if (!dropDestination.trim() || !dropDistance) {
           Alert.alert('Error', 'Please fill all Drop details');
           setLoading(false);
           return;
         }
+        payload.drop = {
+          source: busDestination,
+          destination: dropDestination,
+          distance: parseFloat(dropDistance)
+        };
+        totalDistance += parseFloat(dropDistance);
+      }
 
-        const response = await hybridAPI.bookTaxi({
-          bookingId: currentBookingId,
-          drop: {
-            source: busDestination,
-            destination: dropDestination,
-            distance: parseFloat(dropDistance)
-          },
-          taxiType: 'drop'
-        });
+      payload.distance = totalDistance;
+
+      if (addPickup || addDrop) {
+        const response = await hybridAPI.bookTaxi(payload);
 
         if (!response.success) {
-          throw new Error(response.message || 'Failed to add Drop Taxi');
+          throw new Error(response.message || 'Failed to book taxi');
         }
+
         currentBookingId = response.data._id || response.bookingId;
-        currentTotalFare = response.data.totalFare || response.data.booking.totalFare;
+        // Resulting booking should have totalFare updated
+        currentTotalFare = response.data.totalFare || (busFare + (totalDistance * 15) + (addPickup ? 50 : 0) + (addDrop ? 50 : 0));
       }
 
       // Success - Navigate to Payment
@@ -135,6 +146,32 @@ export default function TaxiBookingAfterBusScreen({ route, navigation }) {
       </LinearGradient>
 
       <ScrollView style={styles.scrollContent}>
+
+        {/* Vehicle Selection */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Select Vehicle Type</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 }}>
+            {['Mini', 'Sedan', 'SUV'].map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={{
+                  padding: 10,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: selectedTaxiType === type ? '#4A90E2' : '#ddd',
+                  backgroundColor: selectedTaxiType === type ? '#EBF5FF' : '#fff',
+                  alignItems: 'center',
+                  width: '30%'
+                }}
+                onPress={() => setSelectedTaxiType(type)}
+              >
+                <Ionicons name="car-sport" size={24} color={selectedTaxiType === type ? '#4A90E2' : '#555'} />
+                <Text style={{ fontWeight: 'bold', marginTop: 5, color: '#333' }}>{type}</Text>
+                <Text style={{ fontSize: 10, color: '#666' }}>₹{taxiRates[type].perKm}/km</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
         {/* Pickup Section */}
         <View style={styles.sectionCard}>
@@ -170,7 +207,9 @@ export default function TaxiBookingAfterBusScreen({ route, navigation }) {
                   onChangeText={setPickupDistance}
                 />
               </View>
-              <Text style={styles.estimateText}>Est. Fare: ₹{50 + (parseFloat(pickupDistance || 0) * 15)}</Text>
+              <Text style={styles.estimateText}>
+                Est. Fare ({selectedTaxiType}): ₹{taxiRates[selectedTaxiType].base + (parseFloat(pickupDistance || 0) * taxiRates[selectedTaxiType].perKm)}
+              </Text>
             </View>
           )}
         </View>
@@ -209,7 +248,9 @@ export default function TaxiBookingAfterBusScreen({ route, navigation }) {
                   onChangeText={setDropDistance}
                 />
               </View>
-              <Text style={styles.estimateText}>Est. Fare: ₹{50 + (parseFloat(dropDistance || 0) * 15)}</Text>
+              <Text style={styles.estimateText}>
+                Est. Fare ({selectedTaxiType}): ₹{taxiRates[selectedTaxiType].base + (parseFloat(dropDistance || 0) * taxiRates[selectedTaxiType].perKm)}
+              </Text>
             </View>
           )}
         </View>

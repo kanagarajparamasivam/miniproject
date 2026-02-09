@@ -5,6 +5,8 @@
 
 export interface BusOption {
   routeNo: string;
+  operator: string;
+  type: string;
   eta: number; // in minutes
   fare: number; // in currency units
   seatAvailable: boolean;
@@ -32,11 +34,26 @@ export interface RouteData {
 }
 
 // Mock Bus Routes Database - Tamil Nadu Cities
+// Mock Bus Routes Database - Tamil Nadu Cities with Multiple Operators
 export const mockBusRoutes: BusOption[] = [
-  // Chennai Routes
+  // Chennai -> Coimbatore (Major Route - Showcasing Multiple Operators)
   {
-    routeNo: "TN001",
-    eta: 180,
+    routeNo: "MKH001",
+    operator: "MKH Travels",
+    type: "AC Sleeper",
+    eta: 480, // 8 hours
+    fare: 850,
+    seatAvailable: true,
+    coveragePercent: 100,
+    source: "Chennai",
+    destination: "Coimbatore",
+    distance: 495
+  },
+  {
+    routeNo: "SETC001",
+    operator: "SETC",
+    type: "Ultra Deluxe",
+    eta: 540, // 9 hours
     fare: 450,
     seatAvailable: true,
     coveragePercent: 100,
@@ -45,9 +62,49 @@ export const mockBusRoutes: BusOption[] = [
     distance: 495
   },
   {
-    routeNo: "TN002",
-    eta: 240,
-    fare: 600,
+    routeNo: "KPN001",
+    operator: "KPN Travels",
+    type: "AC Multi Axle",
+    eta: 450, // 7.5 hours
+    fare: 950,
+    seatAvailable: true,
+    coveragePercent: 100,
+    source: "Chennai",
+    destination: "Coimbatore",
+    distance: 495
+  },
+  {
+    routeNo: "SRS001",
+    operator: "SRS Travels",
+    type: "Non-AC Sleeper",
+    eta: 510, // 8.5 hours
+    fare: 650,
+    seatAvailable: true,
+    coveragePercent: 100,
+    source: "Chennai",
+    destination: "Coimbatore",
+    distance: 495
+  },
+  {
+    routeNo: "KSRTC001",
+    operator: "KSRTC",
+    type: "Airavat",
+    eta: 480,
+    fare: 750,
+    seatAvailable: true,
+    coveragePercent: 100,
+    source: "Chennai",
+    destination: "Coimbatore",
+    distance: 495
+  },
+
+  // Chennai -> Madurai
+  {
+    routeNo: "MKH002",
+    operator: "MKH Travels",
+    type: "AC Sleeper",
+    eta: 420,
+    fare: 750,
     seatAvailable: true,
     coveragePercent: 100,
     source: "Chennai",
@@ -55,7 +112,37 @@ export const mockBusRoutes: BusOption[] = [
     distance: 450
   },
   {
+    routeNo: "SETC002",
+    operator: "SETC",
+    type: "Ultra Deluxe",
+    eta: 480,
+    fare: 420,
+    seatAvailable: true,
+    coveragePercent: 100,
+    source: "Chennai",
+    destination: "Madurai",
+    distance: 450
+  },
+
+  // Coimbatore -> Chennai
+  {
+    routeNo: "KPN002",
+    operator: "KPN Travels",
+    type: "AC Multi Axle",
+    eta: 450,
+    fare: 950,
+    seatAvailable: true,
+    coveragePercent: 100,
+    source: "Coimbatore",
+    destination: "Chennai",
+    distance: 495
+  },
+
+  // Other Routes (kept minimal for brevity but functional)
+  {
     routeNo: "TN003",
+    operator: "SETC",
+    type: "Deluxe",
     eta: 150,
     fare: 350,
     seatAvailable: true,
@@ -66,6 +153,8 @@ export const mockBusRoutes: BusOption[] = [
   },
   {
     routeNo: "TN010",
+    operator: "KPN",
+    type: "AC Seater",
     eta: 210,
     fare: 520,
     seatAvailable: true,
@@ -74,201 +163,6 @@ export const mockBusRoutes: BusOption[] = [
     destination: "Salem",
     distance: 340
   },
-  {
-    routeNo: "TN011",
-    eta: 180,
-    fare: 420,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Chennai",
-    destination: "Vellore",
-    distance: 135
-  },
-  {
-    routeNo: "TN012",
-    eta: 120,
-    fare: 280,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Chennai",
-    destination: "Pondicherry",
-    distance: 150
-  },
-  // Coimbatore Routes
-  {
-    routeNo: "TN004",
-    eta: 120,
-    fare: 280,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Coimbatore",
-    destination: "Salem",
-    distance: 160
-  },
-  {
-    routeNo: "TN005",
-    eta: 180,
-    fare: 400,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Coimbatore",
-    destination: "Madurai",
-    distance: 225
-  },
-  {
-    routeNo: "TN009",
-    eta: 90,
-    fare: 200,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Coimbatore",
-    destination: "Ooty",
-    distance: 85
-  },
-  {
-    routeNo: "TN013",
-    eta: 150,
-    fare: 350,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Coimbatore",
-    destination: "Tirunelveli",
-    distance: 280
-  },
-  {
-    routeNo: "TN014",
-    eta: 100,
-    fare: 250,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Coimbatore",
-    destination: "Erode",
-    distance: 100
-  },
-  // Madurai Routes
-  {
-    routeNo: "TN007",
-    eta: 150,
-    fare: 380,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Madurai",
-    destination: "Tirunelveli",
-    distance: 150
-  },
-  {
-    routeNo: "TN015",
-    eta: 120,
-    fare: 300,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Madurai",
-    destination: "Rameswaram",
-    distance: 170
-  },
-  {
-    routeNo: "TN016",
-    eta: 90,
-    fare: 220,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Madurai",
-    destination: "Kanyakumari",
-    distance: 240
-  },
-  {
-    routeNo: "TN017",
-    eta: 100,
-    fare: 250,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Madurai",
-    destination: "Tiruchirappalli",
-    distance: 130
-  },
-  // Tiruchirappalli Routes
-  {
-    routeNo: "TN008",
-    eta: 120,
-    fare: 300,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Tiruchirappalli",
-    destination: "Thanjavur",
-    distance: 55
-  },
-  {
-    routeNo: "TN018",
-    eta: 90,
-    fare: 200,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Tiruchirappalli",
-    destination: "Pudukkottai",
-    distance: 45
-  },
-  // Salem Routes
-  {
-    routeNo: "TN006",
-    eta: 90,
-    fare: 220,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Salem",
-    destination: "Erode",
-    distance: 80
-  },
-  {
-    routeNo: "TN019",
-    eta: 120,
-    fare: 280,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Salem",
-    destination: "Hosur",
-    distance: 150
-  },
-  {
-    routeNo: "TN020",
-    eta: 150,
-    fare: 350,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Salem",
-    destination: "Vellore",
-    distance: 200
-  },
-  // Other Routes
-  {
-    routeNo: "TN021",
-    eta: 60,
-    fare: 150,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Vellore",
-    destination: "Kanchipuram",
-    distance: 75
-  },
-  {
-    routeNo: "TN022",
-    eta: 180,
-    fare: 420,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Thanjavur",
-    destination: "Nagapattinam",
-    distance: 90
-  },
-  {
-    routeNo: "TN023",
-    eta: 120,
-    fare: 300,
-    seatAvailable: true,
-    coveragePercent: 100,
-    source: "Tirunelveli",
-    destination: "Kanyakumari",
-    distance: 85
-  }
 ];
 
 // Mock Taxi Data - Dynamic calculation based on distance
@@ -312,11 +206,11 @@ export const mockUsers: User[] = [
 export function calculateRoute(source: string, destination: string): RouteData {
   // Find matching bus route for distance
   const busRoute = mockBusRoutes.find(
-    route => 
-      route.source.toLowerCase() === source.toLowerCase() && 
+    route =>
+      route.source.toLowerCase() === source.toLowerCase() &&
       route.destination.toLowerCase() === destination.toLowerCase()
   );
-  
+
   if (busRoute) {
     return {
       source: busRoute.source,
@@ -328,11 +222,11 @@ export function calculateRoute(source: string, destination: string): RouteData {
 
   // Try reverse route
   const reverseRoute = mockBusRoutes.find(
-    route => 
-      route.source.toLowerCase() === destination.toLowerCase() && 
+    route =>
+      route.source.toLowerCase() === destination.toLowerCase() &&
       route.destination.toLowerCase() === source.toLowerCase()
   );
-  
+
   if (reverseRoute) {
     return {
       source: reverseRoute.destination,

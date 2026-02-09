@@ -1,13 +1,14 @@
+import { Platform } from 'react-native';
+
 /**
  * API Service for Backend Communication
  * Handles all HTTP requests to the backend server
  */
 
-// Use 127.0.0.1 for web browsers (localhost sometimes has issues)
-// Use 10.0.2.2 for Android Emulator, 127.0.0.1 for Web, or Machine IP for real device
-// NOTE: If using Android Emulator, set this to 'http://10.0.2.2:3000/api'
-const API_BASE_URL = 'http://10.0.2.2:3000/api';
-// const API_BASE_URL = 'http://127.0.0.1:3000/api'; // Use this for Web/iOS Simulator
+// Use 10.0.2.2 for Android Emulator, localhost for Web/iOS
+const API_BASE_URL = Platform.OS === 'android'
+  ? 'http://10.0.2.2:3000/api'
+  : 'http://localhost:3000/api';
 
 // Mock Data for Offline Fallback
 const MOCK_ROUTES = {
@@ -193,10 +194,16 @@ export const hybridAPI = {
     return apiRequest('/hybrid/book-bus-seat', 'POST', bookingData);
   },
   /**
+   * Submit Passenger Details
+   */
+  submitPassengerDetails: async (data) => {
+    return apiRequest('/hybrid/passenger-details', 'POST', data);
+  },
+  /**
    * Book Taxi for Hybrid Journey
    */
   bookTaxi: async (bookingData) => {
-    return apiRequest('/hybrid/book-taxi', 'POST', bookingData);
+    return apiRequest('/hybrid/taxi-booking', 'POST', bookingData);
   },
 };
 

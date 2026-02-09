@@ -51,10 +51,24 @@ export default function PaymentScreen({ route, navigation }) {
             {
               text: 'OK',
               onPress: () => {
-                // Navigate to booking confirmation or home
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'RouteInput' }],
+                const bookingData = response.data;
+                // Navigate to booking confirmation
+                navigation.navigate('BookingConfirmation', {
+                  bookingId: bookingData._id,
+                  bookingType: bookingData.bookingType,
+                  totalFare: bookingData.totalFare,
+
+                  // Bus Details
+                  source: bookingData.busBooking?.source,
+                  destination: bookingData.busBooking?.destination,
+                  routeNo: bookingData.busBooking?.routeNo,
+                  bookingDate: bookingData.busBooking?.bookingDate,
+                  selectedSeats: bookingData.busBooking?.seats || [],
+                  busFare: bookingData.busBooking?.fare,
+
+                  // Taxi Details (if any)
+                  pickupTaxi: bookingData.pickupTaxi,
+                  dropTaxi: bookingData.dropTaxi,
                 });
               },
             },
@@ -91,7 +105,7 @@ export default function PaymentScreen({ route, navigation }) {
         {/* Booking Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Booking Summary</Text>
-          
+
           {bookingType === 'hybrid' && busFare && taxiFare && (
             <>
               <View style={styles.summaryRow}>
@@ -115,7 +129,7 @@ export default function PaymentScreen({ route, navigation }) {
         {/* Payment Methods */}
         <View style={styles.paymentMethodsCard}>
           <Text style={styles.paymentMethodsTitle}>Select Payment Method</Text>
-          
+
           {paymentMethods.map((method) => (
             <TouchableOpacity
               key={method.id}

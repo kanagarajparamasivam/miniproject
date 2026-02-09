@@ -4,6 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/bookingConfirmationStyles';
 
+// Local styles override if needed, or edit the style file directly.
+// Proceeding to edit the style file directly in next step.
 export default function BookingConfirmationScreen({ route, navigation }) {
     const { bookingId, selectedSeats, totalFare, source, destination, routeNo, bookingDate } = route.params;
 
@@ -46,8 +48,46 @@ export default function BookingConfirmationScreen({ route, navigation }) {
 
                     <View style={styles.divider} />
 
+                    <Text style={styles.label}>Seats</Text>
+                    <Text style={styles.value}>{selectedSeats.join(', ')}</Text>
+
+                    {(route.params.pickupTaxi || route.params.dropTaxi) && (
+                        <>
+                            <View style={styles.divider} />
+                            <Text style={styles.sectionHeader}>Taxi Details</Text>
+
+                            {route.params.pickupTaxi && (
+                                <View style={styles.taxiRow}>
+                                    <Text style={styles.label}>Pickup Taxi</Text>
+                                    <Text style={styles.subValue}>
+                                        {route.params.pickupTaxi.source} <Ionicons name="arrow-forward" size={12} /> {route.params.pickupTaxi.destination}
+                                    </Text>
+                                    <Text style={styles.subValue}>
+                                        Time: {new Date(route.params.pickupTaxi.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </Text>
+                                    <Text style={styles.subValue}>Fare: ₹{route.params.pickupTaxi.fare}</Text>
+                                </View>
+                            )}
+
+                            {route.params.dropTaxi && (
+                                <View style={styles.taxiRow}>
+                                    <Text style={styles.label}>Drop Taxi</Text>
+                                    <Text style={styles.subValue}>
+                                        {route.params.dropTaxi.source} <Ionicons name="arrow-forward" size={12} /> {route.params.dropTaxi.destination}
+                                    </Text>
+                                    <Text style={styles.subValue}>
+                                        Time: {new Date(route.params.dropTaxi.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </Text>
+                                    <Text style={styles.subValue}>Fare: ₹{route.params.dropTaxi.fare}</Text>
+                                </View>
+                            )}
+                        </>
+                    )}
+
+                    <View style={styles.divider} />
+
                     <View style={styles.row}>
-                        <Text style={styles.fareLabel}>Total Fare</Text>
+                        <Text style={styles.fareLabel}>Total Amount ({route.params.pickupTaxi || route.params.dropTaxi ? 'Bus + Taxi' : 'Bus'})</Text>
                         <Text style={styles.fareValue}>₹{totalFare}</Text>
                     </View>
                 </View>

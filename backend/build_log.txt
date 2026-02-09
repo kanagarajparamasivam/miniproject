@@ -1,0 +1,6 @@
+
+> bus-taxi-booking-backend@1.0.0 build
+> tsc
+
+src/routes/hybridRoutes.ts(42,11): error TS2322: Type '{ routeNo: string; source: string; destination: string; fare: number; distance: number; eta: number; seatAvailable: boolean; coveragePercent: number; }[]' is not assignable to type 'BusOption[]'.
+  Type '{ routeNo: string; source: string; destination: string; fare: number; distance: number; eta: number; seatAvailable: boolean; coveragePercent: number; }' is missing the following properties from type 'BusOption': operator, type

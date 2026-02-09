@@ -10,11 +10,16 @@ const router = Router();
  * Returns available bus options for a given route from MongoDB
  */
 router.post('/getBusOptions', async (req: Request, res: Response) => {
+  console.log('------------------------------------------------');
+  console.log('🚌 [API] POST /getBusOptions called');
+
   try {
     const { source, destination } = req.body;
+    console.log(`📍 Params: Source="${source}", Destination="${destination}"`);
 
     // Validation
     if (!source || !destination) {
+      console.warn('⚠️  Missing source or destination');
       return res.status(400).json({
         success: false,
         message: 'Source and destination are required'
@@ -23,23 +28,25 @@ router.post('/getBusOptions', async (req: Request, res: Response) => {
 
     // Check MongoDB connection
     if (mongoose.connection.readyState !== 1) {
+      console.error('❌ Database not connected');
       return res.status(503).json({
         success: false,
-        message: 'Database not connected. Please ensure MongoDB is running and try again.'
+        message: 'Database not connected. Please ensure MongoDB is running.'
       });
     }
 
+    console.log('🔍 Searching buses in MongoDB...');
     // Find buses matching source and destination
     const buses = await Bus.find({
       source: new RegExp(`^${source}$`, 'i'),
       destination: new RegExp(`^${destination}$`, 'i'),
     });
 
+    console.log(`✅ Found ${buses.length} buses matching route.`);
+
     // Convert to BusOption format
-    // Optimizing this for loop with database calls inside might be slow for many buses.
-    // Ideally we aggregate, but for now map with Promise.all
     const busOptions = await Promise.all(buses.map(async (bus) => {
-      // Get booked seats count from Seat collection
+      // Get booked seats count
       const bookedSeatsCount = await Seat.countDocuments({
         busId: bus._id,
         isBooked: true
@@ -50,6 +57,8 @@ router.post('/getBusOptions', async (req: Request, res: Response) => {
       return {
         _id: bus._id.toString(),
         routeNo: bus.routeNo,
+        operator: bus.operator,
+        type: bus.type,
         source: bus.source,
         destination: bus.destination,
         fare: bus.fare,
@@ -69,7 +78,9 @@ router.post('/getBusOptions', async (req: Request, res: Response) => {
       data: busOptions,
       count: busOptions.length
     });
+
   } catch (error: any) {
+    console.error('❌ Error in /getBusOptions:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching bus options',

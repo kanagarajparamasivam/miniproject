@@ -50,6 +50,8 @@ router.post('/getHybridRecommendation', async (req: Request, res: Response) => {
         eta: bus.eta,
         seatAvailable: availableSeats > 0,
         coveragePercent: bus.coveragePercent,
+        operator: bus.operator,
+        type: bus.type,
       };
     });
 
@@ -124,11 +126,11 @@ router.post('/getHybridRecommendation', async (req: Request, res: Response) => {
 
 /**
  * POST /api/hybrid/book-bus-seat
- * Book bus seats for hybrid journey
+ * Step 1: Book bus seats and create hybrid booking
  */
 router.post('/book-bus-seat', async (req: Request, res: Response) => {
   try {
-    const { routeId, seats, from, to, journeyType, userId, fare } = req.body;
+    const { routeId, seats, from, to, journeyType = 'HYBRID', userId } = req.body;
 
     if (!routeId || !seats || !seats.length || !from || !to) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
@@ -140,7 +142,7 @@ router.post('/book-bus-seat', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Bus not found' });
     }
 
-    // 2. Check seat availability
+    // 2. Check availability
     const unavailableSeats = seats.filter((seatNum: string) => {
       const seat = bus.seats.find((s) => s.seatNumber === seatNum);
       return !seat || seat.isBooked;
@@ -154,7 +156,7 @@ router.post('/book-bus-seat', async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Mark seats as booked
+    // 3. Mark seats as BOOKED (Permanent for now)
     seats.forEach((seatNum: string) => {
       const seat = bus.seats.find((s) => s.seatNumber === seatNum);
       if (seat) {
@@ -166,11 +168,11 @@ router.post('/book-bus-seat', async (req: Request, res: Response) => {
 
     await bus.save();
 
-    // 4. Create Booking Record
-    const totalBusFare = fare * seats.length;
+    // 4. Create Hybrid Booking
+    const totalBusFare = bus.fare * seats.length;
 
     const newBooking = new Booking({
-      userId: userId,
+      userId: userId || new mongoose.Types.ObjectId(),
       bookingType: journeyType === 'HYBRID' ? 'hybrid' : 'bus',
       busBooking: {
         busId: bus._id,
@@ -184,7 +186,7 @@ router.post('/book-bus-seat', async (req: Request, res: Response) => {
         bookingDate: new Date(),
       },
       totalFare: totalBusFare,
-      status: 'confirmed',
+      status: 'confirmed', // Mark as confirmed for bus leg
       paymentStatus: 'pending'
     });
 
@@ -197,18 +199,54 @@ router.post('/book-bus-seat', async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error('Hybrid Bus Booking Error:', error);
+    console.error('Book Bus Seat Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 /**
- * POST /api/hybrid/book-taxi
- * Add taxi leg to existing booking
+ * POST /api/hybrid/passenger-details
+ * Step 2: Save passenger info and update status to 'PASSENGER_CONFIRMED'
  */
-router.post('/book-taxi', async (req: Request, res: Response) => {
+router.post('/passenger-details', async (req: Request, res: Response) => {
   try {
-    const { bookingId, pickup, drop, taxiType } = req.body;
+    const { bookingId, passengers } = req.body;
+
+    if (!bookingId || !passengers || !passengers.length) {
+      return res.status(400).json({ success: false, message: 'Missing booking ID or passenger details' });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // Validation/Logic could go here (e.g. check seat count matches passenger count)
+
+    booking.passengerDetails = passengers;
+    booking.status = 'PASSENGER_CONFIRMED'; // STRICT FLOW: Step 2
+
+    await booking.save();
+
+    res.json({
+      success: true,
+      bookingId: booking._id,
+      message: 'Passenger details saved'
+    });
+
+  } catch (error: any) {
+    console.error('Passenger Details Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/hybrid/taxi-booking
+ * Step 3: Add taxi leg and update status to 'HYBRID_COMPLETE'
+ */
+router.post('/taxi-booking', async (req: Request, res: Response) => {
+  try {
+    const { bookingId, pickup, drop, distance, taxiType } = req.body;
 
     if (!bookingId) {
       return res.status(400).json({ success: false, message: 'Booking ID is required' });
@@ -219,36 +257,73 @@ router.post('/book-taxi', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    // Vehicle Pricing Rates (Base Fare + Per Km)
+    const RATES: Record<string, { base: number, perKm: number }> = {
+      'Mini': { base: 50, perKm: 15 },
+      'Sedan': { base: 70, perKm: 20 },
+      'SUV': { base: 100, perKm: 30 }
+    };
+
+    const selectedType = (taxiType && RATES[taxiType]) ? taxiType : 'Mini';
+    const rate = RATES[selectedType];
+
+    // Handle Taxi Logic
+    let calculatedScheduledTime = new Date();
     let additionalFare = 0;
 
-    // Update Pickup
     if (pickup) {
+      // Expecting string or object
+      const pickupSource = typeof pickup === 'string' ? pickup : pickup.source;
+
+      // For Pickup: Schedule based on Bus Departure
+      // We want to reach bus stand 15 mins before departure
+      if (booking.busBooking && booking.busBooking.departureTime) {
+        const [hours, minutes] = booking.busBooking.departureTime.split(':').map(Number);
+        const busDate = new Date(booking.busBooking.bookingDate);
+        busDate.setHours(hours, minutes, 0, 0);
+        // Target Arrival at Bus Stand: Departure - 15 mins
+        calculatedScheduledTime = new Date(busDate.getTime() - 15 * 60000);
+      }
+
       booking.pickupTaxi = {
-        source: pickup.location || pickup.source,
-        destination: pickup.destination,
-        distance: pickup.distance,
-        fare: 50 + (pickup.distance * 15), // Simple calc: Base 50 + 15/km
-        scheduledTime: new Date(),
-        estimatedPickupTime: new Date()
+        source: pickupSource,
+        destination: booking.busBooking?.source || '', // To Bus
+        distance: distance || 5, // Default or from logic
+        fare: rate.base + ((distance || 5) * rate.perKm),
+        scheduledTime: calculatedScheduledTime,
+        estimatedPickupTime: calculatedScheduledTime,
+        taxiType: selectedType
       };
       additionalFare += booking.pickupTaxi.fare;
     }
 
-    // Update Drop
     if (drop) {
+      const dropDest = typeof drop === 'string' ? drop : drop.destination;
+
+      // For Drop: Schedule based on Bus Arrival
+      if (booking.busBooking && booking.busBooking.arrivalTime) {
+        const [hours, minutes] = booking.busBooking.arrivalTime.split(':').map(Number);
+        const busDate = new Date(booking.busBooking.bookingDate);
+        busDate.setHours(hours, minutes, 0, 0);
+        // Pickup Time: Arrival + 15 mins buffer
+        calculatedScheduledTime = new Date(busDate.getTime() + 15 * 60000);
+      }
+
       booking.dropTaxi = {
-        source: drop.source,
-        destination: drop.location || drop.destination,
-        distance: drop.distance,
-        fare: 50 + (drop.distance * 15),
-        scheduledTime: new Date(),
-        estimatedPickupTime: new Date()
+        source: booking.busBooking?.destination || '', // From Bus
+        destination: dropDest,
+        distance: distance || 5,
+        fare: rate.base + ((distance || 5) * rate.perKm),
+        scheduledTime: calculatedScheduledTime,
+        estimatedPickupTime: calculatedScheduledTime,
+        taxiType: selectedType
       };
       additionalFare += booking.dropTaxi.fare;
     }
 
+    booking.bookingType = 'hybrid'; // Force hybrid type
     booking.totalFare += additionalFare;
-    // booking.status = 'confirmed'; // Already confirmed
+    booking.status = 'HYBRID_COMPLETE'; // STRICT FLOW: Step 3
 
     await booking.save();
 
@@ -256,14 +331,16 @@ router.post('/book-taxi', async (req: Request, res: Response) => {
       success: true,
       bookingId: booking._id,
       data: booking,
-      message: 'Taxi booking confirmed'
+      message: 'Hybrid booking complete'
     });
 
   } catch (error: any) {
-    console.error('Hybrid Taxi Booking Error:', error);
+    console.error('Taxi Booking Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+
 
 export { router as hybridRoutes };
 

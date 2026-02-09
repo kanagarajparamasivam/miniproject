@@ -6,6 +6,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,10 @@ export default function BusSeatSelectionScreen({ route, navigation }) {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  // Modal State - RESTORED for mandatory taxi prompt
+  const [modalVisible, setModalVisible] = useState(false);
+
 
   useEffect(() => {
     fetchBusDetails();
@@ -55,135 +60,99 @@ export default function BusSeatSelectionScreen({ route, navigation }) {
     }
   };
 
-  const handleContinue = async () => {
-    if (selectedSeats.length === 0) {
-      Alert.alert('No Seats Selected', 'Please select at least one seat');
-      return;
-    }
-
+  // Helper function to process the actual booking
+  const processBooking = async (needsLocalTaxi) => {
     // For now, use demo user ID - in real app, get from auth context
     const userId = 'demo@example.com';
 
     console.log('Starting booking process...');
     setBookingLoading(true);
+
+    // Give UI a moment to render the loading spinner
+    // Remove setTimeout to ensure robust execution
     try {
-      const response = await bookingAPI.bookBus({
+      // Create a timeout promise to prevent infinite hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), 5000)
+      );
+
+      const bookingPromise = bookingAPI.bookBus({
         userId,
         busId,
-        routeId: routeNo, // Pass routeId for backend lookup if needed
+        routeId: routeNo,
         from: source,
         to: destination,
         seats: selectedSeats,
-        fare: fare, // Unit fare, or calculate total in backend
+        fare: fare,
         bookingDate: new Date().toISOString(),
       });
+
+      // Race against timeout
+      const response = await Promise.race([bookingPromise, timeoutPromise]);
+
       console.log('Booking response:', response);
 
       if (response.success) {
         const bookingId = response.data._id;
-        const totalFare = fare * selectedSeats.length; // Use calculation for display/passing
+        const totalFare = fare * selectedSeats.length;
         console.log('Booking successful. Booking ID:', bookingId);
 
-        // HYBRID FLOW
-        if (isHybrid) {
-          // Changed: Call Hybrid Specific API to book bus FIRST
-          console.log('Hybrid Flow: Booking bus seat first...');
-          const hybridResponse = await hybridAPI.bookBus({
-            userId,
-            routeId: routeNo,
-            seats: selectedSeats,
-            from: source,
-            to: destination,
-            journeyType: 'HYBRID',
-            fare: fare
-          });
+        navigation.navigate('BoardingDropping', {
+          bookingId,
+          busId,
+          source,
+          destination,
+          arrivalTime: arrivalTime || response.data.busBooking?.arrivalTime,
+          fare: fare,
+          selectedSeats,
+          needsLocalTaxi // Pass the user's choice to the next screen
+        });
 
-          if (hybridResponse.success) {
-            console.log('Hybrid Bus Booking Success:', hybridResponse.bookingId);
-            navigation.navigate('TaxiBookingAfterBus', {
-              bookingId: hybridResponse.bookingId,
-              busBookingId: hybridResponse.bookingId,
-              source: source,
-              destination: destination,
-              busArrivalTime: arrivalTime,
-              busFare: totalFare,
-              totalFare: totalFare,
-            });
-          } else {
-            Alert.alert('Booking Failed', hybridResponse.message || 'Failed to book bus leg');
-          }
-          return;
-        }
-
-        // BUS-ONLY FLOW
-        // Ask if they want to add a taxi leg
-        Alert.alert(
-          'Booking Successful!',
-          'Do you want to add a last-mile taxi?',
-          [
-            {
-              text: 'No, Finish Booking',
-              style: 'cancel',
-              onPress: () => {
-                // Navigate directly to Confirmation as per requirements
-                navigation.navigate('BookingConfirmation', {
-                  bookingId,
-                  selectedSeats,
-                  totalFare,
-                  source,
-                  destination,
-                  routeNo,
-                  bookingDate: new Date().toISOString()
-                });
-              },
-            },
-            {
-              text: 'Yes, Add Taxi',
-              onPress: () => {
-                navigation.navigate('TaxiBookingAfterBus', {
-                  bookingId,
-                  busBookingId: bookingId,
-                  source: source,
-                  destination: destination,
-                  busArrivalTime: arrivalTime,
-                  busFare: totalFare,
-                  totalFare: totalFare,
-                });
-              },
-            },
-          ],
-          { cancelable: false }
-        );
       } else {
+        // ... failure logic ...
         console.log('Booking failed:', response.message);
-        // Handle specific unavailable seats
         if (response.unavailableSeats && response.unavailableSeats.length > 0) {
           Alert.alert('Seats Unavailable', `The following seats are already booked: ${response.unavailableSeats.join(', ')}. Please select others.`);
-          // Refresh seat availability
           fetchBusDetails();
-          // Unselect unavailable seats
           setSelectedSeats(prev => prev.filter(s => !response.unavailableSeats.includes(s)));
         } else {
           Alert.alert('Booking Failed', response.message || 'Failed to book bus');
         }
       }
     } catch (error) {
-      console.error('CRITICAL: Booking error in handleContinue:', error);
+      console.error('CRITICAL: Booking error in processBooking:', error);
       Alert.alert('Booking Error', 'Failed to process booking. Check your connection or server logs.\n\nDetails: ' + error.message);
     } finally {
       setBookingLoading(false);
     }
   };
 
+  const handleContinue = () => {
+    if (selectedSeats.length === 0) {
+      Alert.alert('No Seats Selected', 'Please select at least one seat');
+      return;
+    }
+    // Show the Local Taxi confirmation modal instead of booking directly
+    setModalVisible(true);
+  };
+
+  const handleTaxiChoice = (choice) => {
+    setModalVisible(false);
+    // choice is true for "Yes", false for "No"
+    processBooking(choice);
+  };
+
   const renderSeatLayout = () => {
+    // ...
     // Organize seats in rows (2-3-2 pattern common in buses)
     const rows = [];
     for (let i = 0; i < seats.length; i += 4) {
       rows.push(seats.slice(i, i + 4));
     }
-
+    // ...
     return (
       <View style={styles.seatLayout}>
+        {/* ... render content ... */}
         {/* Legend */}
         <View style={styles.legend}>
           <View style={styles.legendItem}>
@@ -272,9 +241,10 @@ export default function BusSeatSelectionScreen({ route, navigation }) {
           ))}
         </ScrollView>
       </View>
-    );
+    )
   };
 
+  // ... rest of component ...
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -341,6 +311,44 @@ export default function BusSeatSelectionScreen({ route, navigation }) {
           )}
         </TouchableOpacity>
       </View>
+
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="car-sport" size={48} color="#4A90E2" />
+              <Text style={styles.modalTitle}>Local Taxi</Text>
+            </View>
+
+            <Text style={styles.modalMessage}>
+              Do you need a local taxi after reaching your destination?
+            </Text>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSecondary]}
+                onPress={() => handleTaxiChoice(false)}
+              >
+                <Text style={styles.modalButtonTextSecondary}>No, Skip</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={() => handleTaxiChoice(true)}
+              >
+                <Text style={styles.modalButtonTextPrimary}>Yes, Local Taxi</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }

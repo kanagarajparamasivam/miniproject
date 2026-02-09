@@ -12,6 +12,8 @@ import StandaloneTaxiScreen from './src/screens/StandaloneTaxiScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
 import MyBookingsScreen from './src/screens/MyBookingsScreen';
 import BookingConfirmationScreen from './src/screens/BookingConfirmationScreen';
+import PassengerInfoScreen from './src/screens/PassengerInfoScreen';
+import BoardingDroppingScreen from './src/screens/BoardingDroppingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +33,8 @@ export default function App() {
           <Stack.Screen name="RouteInput" component={RouteInputScreen} />
           <Stack.Screen name="Results" component={ResultsScreen} />
           <Stack.Screen name="BusSeatSelection" component={BusSeatSelectionScreen} />
+          <Stack.Screen name="BoardingDropping" component={BoardingDroppingScreen} />
+          <Stack.Screen name="PassengerInfo" component={PassengerInfoScreen} />
           <Stack.Screen name="TaxiBookingAfterBus" component={TaxiBookingAfterBusScreen} />
           <Stack.Screen name="StandaloneTaxi" component={StandaloneTaxiScreen} />
           <Stack.Screen name="Payment" component={PaymentScreen} />

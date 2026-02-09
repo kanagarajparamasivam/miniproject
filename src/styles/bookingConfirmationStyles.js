@@ -113,4 +113,26 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    // Hybrid/Taxi Section Styles
+    sectionHeader: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#4A90E2',
+        marginBottom: 10,
+        marginTop: 5,
+    },
+    taxiRow: {
+        backgroundColor: '#F9F9F9',
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 10,
+        borderLeftWidth: 3,
+        borderLeftColor: '#4A90E2',
+    },
+    subValue: {
+        fontSize: 14,
+        color: '#444',
+        marginBottom: 4,
+        fontWeight: '500',
+    },
 });
